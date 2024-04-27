@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 #############################################################################
@@ -16,7 +16,7 @@ import os
 import argparse
 
 
-class NandId(object):
+class NandId:
     ## Lookup tables are taken from SpritesMods' work: http://spritesmods.com/?art=ftdinand
     ## and B. Kerler's improvements: https://github.com/bkerler/NANDReader_FTDI
     _manuf = {
@@ -97,7 +97,7 @@ class NandId(object):
     }
 
     def __init__(self, idcode):
-        if isinstance(idcode, str) or isinstance(idcode, unicode):
+        if isinstance(idcode, str) or isinstance(idcode, str):
             idcode = int(idcode, 16)
         self.idcode = idcode
         self.manufId = 0xff & (idcode >> 24)
@@ -111,7 +111,7 @@ class NandId(object):
         fourth = 0xff & idcode
         self.page_size = 2 ** (10 + (fourth & 0x3))
         self.spare_size = 2 ** (fourth & 0x4)
-        self._sat = ((fourth >> 6)  & 2) + ((fourth >> 3) & 1)
+        self._sat = ((fourth >> 6) & 2) + ((fourth >> 3) & 1)
         self.block_size = 2 ** (16 + ((fourth >> 4) & 3))
         self.organization = 2 ** (4 + (1 & (fourth >> 6)))
 
@@ -151,16 +151,17 @@ class NandId(object):
 
 
 def prettify(val):
-    _suffix = [ 'B', 'KB', 'MB', 'GB', 'TB' ]
+    _suffix = ['B', 'KB', 'MB', 'GB', 'TB']
     suffix = 0
     small = val
     while small > 1024:
         small /= 1024.0
         suffix += 1
-    return (val, round(small, 2), _suffix[suffix])
+    return val, round(small, 2), _suffix[suffix]
+
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(sys.argv[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", metavar="FILE", type=argparse.FileType('rb'), required=True, dest="finput")
     parser.add_argument("-o", "--output", metavar="FILE", type=argparse.FileType('wb'), required=True, dest="foutput")
     parser.add_argument("-I", "--idcode", metavar="ID", default=None, dest="idcode", type=NandId)
@@ -169,37 +170,37 @@ if __name__ == '__main__':
     parser.add_argument("--save-oob", metavar="FILE", type=argparse.FileType('wb'), default=None, dest="oobfile")
     parser.add_argument("--layout", default="adjacent", choices=["adjacent", "separate", "guess"], dest="layout")
 
-    args = parser.parse_args(sys.argv[1:])
+    args = parser.parse_args()
     if args.idcode is not None and (args.page is not None or args.oob is not None):
-        print >> sys.stderr, "[!] You cannot specify an idcode and page/oob size at the same time"
+        print("[!] You cannot specify an idcode and page/oob size at the same time", file=sys.stderr)
         sys.exit(1)
 
     if args.idcode is None and (args.page is None or args.oob is None):
-        print >> sys.stderr, "[!] You must specify either idcode or both page and oob sizes"
+        print("[!] You must specify either idcode or both page and oob sizes", file=sys.stderr)
         sys.exit(2)
 
     if args.idcode is not None:
-        print ""
-        print "[*] Using given ID code"
-        print repr(args.idcode)
+        print("")
+        print("[*] Using given ID code")
+        print(repr(args.idcode))
         args.page = args.idcode.page_size
         args.oob = args.idcode.oob_size
     else:
-        print "[*] Using given parameters: page of %d bytes separated by %d bytes OOB data" % (args.page, args.oob)
+        print("[*] Using given parameters: page of %d bytes separated by %d bytes OOB data" % (args.page, args.oob))
 
     if args.layout == "guess":
-        print ""
-        print "[*] Guessing NAND layout using hamming distance..."
+        print("")
+        print("[*] Guessing NAND layout using hamming distance...")
         hamming_adj = hamming_sep = 0
         oob_data_adj = []
         oob_data_sep = []
-        oob_adj_size = args.oob / (args.page / 512)
+        oob_adj_size = args.oob * 512 / args.page
         while True:
             data = args.finput.read(args.page + args.oob)
             if data == "":
                 args.finput.seek(0)
                 break
-            if data == "\xff" * (args.page + args.oob):
+            if data == b"\xff" * (args.page + args.oob):
                 continue
             oob_data_sep.append(data[args.page:])
             tmp = ""
@@ -207,20 +208,20 @@ if __name__ == '__main__':
                 tmp += data[i * (512 + oob_adj_size):(i * (512 + oob_adj_size)) + oob_adj_size]
             oob_data_adj.append(tmp)
         for i in range(len(oob_data_adj) - 1):
-            hamming_adj += sum([(ord(a) ^ ord(b)) != 0 for a,b in zip(oob_data_adj[i], oob_data_adj[i + 1])])
-            hamming_sep += sum([(ord(a) ^ ord(b)) != 0 for a,b in zip(oob_data_sep[i], oob_data_sep[i + 1])])
+            hamming_adj += sum([(a ^ b) != 0 for a, b in zip(oob_data_adj[i], oob_data_adj[i + 1])])
+            hamming_sep += sum([(a ^ b) != 0 for a, b in zip(oob_data_sep[i], oob_data_sep[i + 1])])
         del oob_data_adj
         del oob_data_sep
         args.layout = "adjacent" if hamming_sep > hamming_adj else "separate"
-        print "[*] Guessed layout is: %s" % args.layout
+        print("[*] Guessed layout is: %s" % args.layout)
 
-    cnt = { 'data': 0, 'oob': 0, 'empty': 0, 'total': 0 }
+    cnt = {'data': 0, 'oob': 0, 'empty': 0, 'total': 0}
     oob_step = args.oob * 512 / args.page
-    print ""
-    print "[*] Start dumping..."
+    print("")
+    print("[*] Start dumping...")
     while True:
-        data = ""
-        oob = ""
+        data = b""
+        oob = b""
         if args.layout == "separate":
             data = args.finput.read(args.page)
             oob = args.finput.read(args.oob)
@@ -233,22 +234,21 @@ if __name__ == '__main__':
         args.foutput.write(data)
         if args.oobfile is not None:
             args.oobfile.write(oob)
-        if oob == "":
+        if oob == b"":
             break
         cnt['total'] += 1
-        if data == "\xff" * len(data):
+        if data == b"\xff" * len(data):
             cnt['empty'] += 1
     args.finput.close()
     args.foutput.close()
     if args.oobfile is not None:
         args.oobfile.close()
-    print "[*] Finished"
-    print "\tTotal: %d bytes (%.02f %s)" % prettify(cnt['data'] + cnt['oob'])
-    print "\tData : %d bytes (%.02f %s)" % prettify(cnt['data'])
-    print "\tOOB  : %d bytes (%.02f %s)" % prettify(cnt['oob'])
-    percent = 100.0 * float(cnt['empty'])/float(cnt['total'])
-    print "\tClear: %0.2f%% of the flash is empty (%d pages out of %d)" % (percent, cnt['empty'], cnt['total'])
+    print("[*] Finished")
+    print("\tTotal: %d bytes (%.02f %s)" % prettify(cnt['data'] + cnt['oob']))
+    print("\tData : %d bytes (%.02f %s)" % prettify(cnt['data']))
+    print("\tOOB  : %d bytes (%.02f %s)" % prettify(cnt['oob']))
+    percent = 100.0 * float(cnt['empty']) / float(cnt['total'])
+    print("\tClear: %0.2f%% of the flash is empty (%d pages out of %d)" % (percent, cnt['empty'], cnt['total']))
     sys.exit(0)
 
 # vim:ts=4:expandtab:sw=4
-
