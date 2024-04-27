@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 #############################################################################
@@ -28,28 +28,27 @@ def rebuild_file(out_file, in_files, chunk_size=1024):
         if all([len(x) == 0 for x in in_data]):
             break
         out_data = []
-        for byte_offset in xrange(len(in_data[0])):
+        for byte_offset in range(len(in_data[0])):
             c = Counter([x[byte_offset] for x in in_data])
             elected = c.most_common(2)
             if len(elected) == 2 and elected[0][1] == elected[1][1]:
-                print "Warning: ex-aequo candidates detected '0x%02x' (%d) and '0x%02x' (%d)" % (ord(elected[0][0]),
-                                                                                                 elected[0][1],
-                                                                                                 ord(elected[1][0]),
-                                                                                                 elected[1][1])
-                print "\tArbitrary choosing '0x%02x'" % ord(elected[0][0])
+                print("Warning: ex-aequo candidates detected '0x%02x' (%d) and '0x%02x' (%d)" % (ord(elected[0][0]),
+                                                                                                   elected[0][1],
+                                                                                                   ord(elected[1][0]),
+                                                                                                   elected[1][1]))
+                print("\tArbitrary choosing '0x%02x'" % ord(elected[0][0]))
             out_data.append(c.most_common(1)[0][0])
-        out_file.write("".join(out_data))
+        out_file.write(bytes(out_data))
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(sys.argv[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument('infiles', metavar="INFILE", nargs='+', help="Input files", type=argparse.FileType('rb'))
     parser.add_argument('-o', '--output', dest='outfile', metavar='OUTFILE', help='Destination of the rebuilt image',
                         required=True, type=argparse.FileType('wb'))
 
-    args = parser.parse_args(sys.argv[1:])
+    args = parser.parse_args()
     rebuild_file(args.outfile, args.infiles)
     [x.close() for x in args.infiles]
     args.outfile.close()
 
 # vim:ts=4:expandtab:sw=4
-
