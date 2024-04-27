@@ -16,7 +16,7 @@ More about this tool [on my related blog post](http://blog.j-michel.org/post/613
 ```
 #!sh
 
-usage: ./firmware-reconstruct.py [-h] -o OUTFILE INFILE [INFILE ...]
+usage: python3 firmware-reconstruct.py [-h] -o OUTFILE INFILE [INFILE ...]
 
 positional arguments:
   INFILE                Input files
@@ -41,7 +41,7 @@ Read more about it [on this related blog post](http://blog.j-michel.org/post/857
 #!sh
 
 
-usage: ./Vingcard.py [-h] FILE
+usage: python3 Vingcard.py [-h] FILE
 
 positional arguments:
   FILE
@@ -62,7 +62,7 @@ You can read more about that tool [on the related blog post](http://blog.j-miche
 ```
 #!sh
 
-usage: ./Nand-dump-tool.py [-h] -i FILE -o FILE [-I ID] [--page-size PAGE]
+usage: python3 Nand-dump-tool.py [-h] -i FILE -o FILE [-I ID] [--page-size PAGE]
                            [--oob-size SIZE] [--save-oob FILE]
                            [--layout {adjacent,separate,guess}]
 
